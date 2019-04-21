@@ -4,6 +4,7 @@ import com.model.User;
 import org.apache.shiro.authc.*;
 import org.apache.shiro.crypto.hash.SimpleHash;
 import org.apache.shiro.realm.AuthenticatingRealm;
+import org.apache.shiro.util.ByteSource;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -54,18 +55,27 @@ public class ShiroRealm extends AuthenticatingRealm {
         Object credentials = u.getPassword();
         //3)realmName：当前realm对象的name，调用父类的getName()方法即可
         String realmName = getName();
+        //4）credentials盐值
+        ByteSource credentialsSalt = ByteSource.Util.bytes(principal);//使用账号作为盐值
 
-        SimpleAuthenticationInfo info = new SimpleAuthenticationInfo(principal,credentials,realmName);
-
+        /**
+         * 1）在doGetAuthenticationInfo方法返回值创建SimpleAuthenticationInfo对象的时候，需要使用
+         SimpleAuthenticationInfo(principal, credentials, credentialsSalt, realmName)构造器。
+         2）使用ByteSource.Util.bytes()来计算盐值
+         3）盐值需要唯一，一般使用随机字符串或者userid
+         4）使用new SimpleHash(hashAlgorithmName,crdentials,salt,hashIterations)来计算盐值加密
+         后的密码的值。
+         */
+        SimpleAuthenticationInfo info = new SimpleAuthenticationInfo(principal, credentials, credentialsSalt, realmName);
         return info;
     }
 
     public static void main(String[] args) {
         String hashAlgorithmName = "MD5";//加密方式
-        Object crdentials = "123456";//密码原值
+        Object credentials = "123456";//密码原值
         Object salt = null;//盐值
         int hashIterations = 1024;//加密1024次
-        Object result = new SimpleHash(hashAlgorithmName,crdentials,salt,hashIterations);
+        Object result = new SimpleHash(hashAlgorithmName,credentials,salt,hashIterations);
         System.out.println(result);
     }
 }
